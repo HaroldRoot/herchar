@@ -165,4 +165,82 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage('复制操作出现错误。', 'error');
         }
     });
+
+    const modal = document.getElementById('infoModal');
+    const trigger = document.getElementById('helpTrigger');
+    const closeIcon = document.getElementById('closeModal');
+    const closeBtn = document.getElementById('closeModalBtn');
+    const overlay = document.getElementById('modalOverlay');
+
+    // 打开弹窗函数
+    const openModal = () => {
+        modal.classList.remove('hidden');
+        // 简单的淡入动画逻辑
+        modal.animate([
+            { opacity: 0 },
+            { opacity: 1 }
+        ], {
+            duration: 200,
+            easing: 'ease-out'
+        });
+    };
+
+    // 关闭弹窗函数
+    const closeModal = () => {
+        const animation = modal.animate([
+            { opacity: 1 },
+            { opacity: 0 }
+        ], {
+            duration: 150,
+            easing: 'ease-in'
+        });
+
+        animation.onfinish = () => {
+            modal.classList.add('hidden');
+        };
+    };
+
+    // 绑定事件
+    trigger.addEventListener('click', openModal);
+    closeIcon.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', closeModal);
+
+    // ESC 键关闭
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeModal();
+        }
+    });
+
+    function showMessage(message, type = 'success') {
+        const container = document.body;
+        let messageBox = document.getElementById('messageBox');
+
+        if (!messageBox) {
+            messageBox = document.createElement('div');
+            messageBox.id = 'messageBox';
+            messageBox.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 p-4 shadow-neon-pink opacity-0 transition-opacity duration-300 z-50 text-vapor-bg font-heading font-bold text-center border-2 border-white rounded-none uppercase tracking-widest min-w-[200px]';
+            container.appendChild(messageBox);
+        }
+
+        let bgColor = 'bg-vapor-secondary';
+        if (type === 'success') {
+            bgColor = 'bg-vapor-accent';
+            messageBox.style.boxShadow = '0 0 15px #05ffa1';
+        } else if (type === 'error') {
+            bgColor = 'bg-vapor-primary';
+            messageBox.style.boxShadow = '0 0 15px #ff71ce';
+        }
+
+        messageBox.className = `fixed top-6 left-1/2 transform -translate-x-1/2 p-4 opacity-0 transition-opacity duration-300 z-50 text-vapor-bg font-heading font-bold text-center border-0 rounded-none uppercase tracking-widest min-w-[200px] ${bgColor}`;
+
+        messageBox.textContent = message;
+        messageBox.style.opacity = 1;
+
+        clearTimeout(messageBox.timer);
+        messageBox.timer = setTimeout(() => {
+            messageBox.style.opacity = 0;
+        }, 3000);
+    }
 });
