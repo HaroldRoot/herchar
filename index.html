@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全女文字转换器 - Vaporwave Edition</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700;900&display=swap"
+        rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vapor: {
+                            bg: '#2b213a',
+                            surface: '#120458',
+                            primary: '#ff71ce', // Pink
+                            secondary: '#01cdfe', // Cyan
+                            accent: '#05ffa1', // Green
+                            warning: '#fffb96', // Yellow
+                            muted: '#b967ff', // Purple
+                            text: '#ffffff'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['"Outfit"', 'sans-serif'],
+                        body: ['"Inter"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neon-pink': '0 0 5px #ff71ce, 0 0 15px #ff71ce',
+                        'neon-cyan': '0 0 5px #01cdfe, 0 0 15px #01cdfe',
+                        'xl-vapor': '8px 8px 0px rgba(1, 205, 254, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* CSS Variables per Design System */
+        :root {
+            --color-success: #05ffa1;
+            --color-warning: #fffb96;
+            --color-error: #ff71ce;
+            --color-info: #01cdfe;
+            --color-primary: #ff71ce;
+            --color-secondary: #01cdfe;
+            --color-accent: #05ffa1;
+            --color-background: #2b213a;
+            --color-surface: #120458;
+            --color-text: #ffffff;
+            --color-muted: #b967ff;
+            --font-heading: "Outfit", sans-serif;
+            --font-body: "Inter", sans-serif;
+            --radius: 0px;
+            --border-width: 0px;
+        }
+
+        /* Hanzi Fonts */
+        @font-face {
+            font-family: HanaMinB;
+            src: url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinB.woff2) format("woff2"), url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinB.woff) format("woff");
+        }
+
+        @font-face {
+            font-family: HanaMinA;
+            src: url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinA.woff2) format("woff2"), url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinA.woff) format("woff");
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--color-background);
+            color: var(--color-text);
+            /* Retro Grid Background Effect */
+            background-image:
+                linear-gradient(var(--color-surface) 1px, transparent 1px),
+                linear-gradient(90deg, var(--color-surface) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center top;
+        }
+
+        /* Add a vignette to soften the grid edges */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, transparent 40%, var(--color-background) 100%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .hanzi-box {
+            font-family: "HanaMinA", "HanaMinB";
+            line-height: 1.3;
+            font-weight: 1000;
+            font-size: 1.6rem;
+        }
+
+        /* Custom Scrollbar */
+        textarea::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        textarea::-webkit-scrollbar-track {
+            background: #1a0b2e;
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+            background: var(--color-secondary);
+            border: 1px solid var(--color-surface);
+        }
+
+        /* Spinner */
+        .loading-spinner {
+            border-top-color: var(--color-success);
+            border-right-color: var(--color-secondary);
+            border-bottom-color: var(--color-primary);
+            border-left-color: var(--color-muted);
+            -webkit-animation: spinner 1s linear infinite;
+            animation: spinner 1s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Text Glow Utilities */
+        .text-glow {
+            text-shadow: 0 0 10px var(--color-primary), 0 0 20px var(--color-primary);
+        }
+
+        .text-glow-cyan {
+            text-shadow: 0 0 10px var(--color-secondary);
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen p-4 selection:bg-vapor-primary selection:text-white">
+
+    <div id="app-container"
+        class="bg-vapor-surface border border-vapor-secondary/30 p-6 md:p-8 shadow-xl-vapor w-full max-w-lg relative overflow-hidden rounded-none">
+
+        <div
+            class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-vapor-secondary via-vapor-primary to-vapor-accent">
+        </div>
+
+        <h1
+            class="text-4xl font-heading font-black text-transparent bg-clip-text bg-gradient-to-r from-vapor-secondary to-vapor-primary mb-2 text-center tracking-wide uppercase italic pr-2">
+            全女文字转换器
+        </h1>
+        <p class="text-center text-vapor-muted text-xs mb-8 font-mono tracking-widest uppercase">
+            // HER_CHARACTER_CONVERTER_V1.0
+        </p>
+
+        <div id="loadingStatus" class="flex items-center justify-center space-x-3 mb-6 text-vapor-secondary">
+            <div class="loading-spinner ease-linear rounded-full border-4 h-6 w-6"></div>
+            <span class="text-sm font-bold tracking-wider">LOADING_DATA...</span>
+        </div>
+
+        <div>
+            <label for="inputText" class="block text-sm font-bold text-vapor-secondary mb-2 uppercase tracking-wider">
+                > Input Data
+            </label>
+            <textarea id="inputText" rows="2"
+                class="hanzi-box w-full p-4 bg-vapor-bg/80 border-2 border-vapor-muted text-vapor-primary focus:border-vapor-secondary focus:shadow-neon-cyan focus:outline-none transition-all duration-300 resize-none placeholder-vapor-muted/50 rounded-none"
+                placeholder="在此输入文字..."></textarea>
+        </div>
+
+        <div class="flex justify-end items-center mb-2 mt-3 group">
+            <input id="compatibilityMode" type="checkbox"
+                class="appearance-none w-5 h-5 border-2 border-vapor-primary bg-vapor-bg checked:bg-vapor-primary checked:border-vapor-success focus:ring-0 cursor-pointer transition-colors relative rounded-none">
+            <label for="compatibilityMode"
+                class="ml-3 text-xs font-bold text-vapor-muted group-hover:text-vapor-primary cursor-pointer select-none uppercase tracking-widest transition-colors">
+                兼容模式 [Compatibility]
+            </label>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mt-6">
+            <button id="clearInputButton"
+                class="w-full bg-transparent border-2 border-vapor-muted text-vapor-muted hover:bg-vapor-muted hover:text-white hover:shadow-neon-pink font-heading font-bold py-3 px-4 transition-all duration-200 uppercase tracking-wider rounded-none">
+                🗑️ 清空输入
+            </button>
+            <button id="convertButton" disabled
+                class="w-full bg-gradient-to-r from-vapor-primary to-purple-600 hover:from-vapor-accent hover:to-vapor-secondary text-white disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed font-heading font-bold py-3 px-4 shadow-lg transition-all duration-200 hover:shadow-neon-pink uppercase tracking-wider rounded-none border-none">
+                ✨ 立即转换
+            </button>
+        </div>
+
+        <div>
+            <label for="outputText"
+                class="block text-sm font-bold text-vapor-accent mb-2 mt-8 uppercase tracking-wider">
+                > System Output
+            </label>
+            <textarea id="outputText" rows="2" readonly
+                class="hanzi-box w-full p-4 bg-vapor-bg text-vapor-accent border-2 border-vapor-accent/50 focus:border-vapor-accent focus:shadow-[0_0_15px_rgba(5,255,161,0.3)] focus:outline-none transition-all duration-300 resize-none rounded-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mt-6">
+            <button id="generateImageButton"
+                class="w-full bg-vapor-secondary hover:bg-cyan-300 text-vapor-bg font-heading font-black py-3 px-4 shadow-lg transition-all duration-200 hover:shadow-neon-cyan uppercase tracking-wider rounded-none">
+                🖼️ 保存为图片
+            </button>
+            <button id="copyButton"
+                class="w-full bg-vapor-accent hover:bg-green-300 text-vapor-bg font-heading font-black py-3 px-4 shadow-lg transition-all duration-200 hover:shadow-[0_0_15px_#05ffa1] uppercase tracking-wider rounded-none">
+                📋 复制到剪贴板
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function showMessage(message, type = 'success') {
+            const container = document.body;
+            let messageBox = document.getElementById('messageBox');
+
+            if (!messageBox) {
+                messageBox = document.createElement('div');
+                messageBox.id = 'messageBox';
+                messageBox.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 p-4 shadow-neon-pink opacity-0 transition-opacity duration-300 z-50 text-vapor-bg font-heading font-bold text-center border-2 border-white rounded-none uppercase tracking-widest min-w-[200px]';
+                container.appendChild(messageBox);
+            }
+
+            let bgColor = 'bg-vapor-secondary';
+            if (type === 'success') {
+                bgColor = 'bg-vapor-accent';
+                messageBox.style.boxShadow = '0 0 15px #05ffa1';
+            } else if (type === 'error') {
+                bgColor = 'bg-vapor-primary';
+                messageBox.style.boxShadow = '0 0 15px #ff71ce';
+            }
+
+            // Reset classes and apply new ones
+            messageBox.className = `fixed top-6 left-1/2 transform -translate-x-1/2 p-4 opacity-0 transition-opacity duration-300 z-50 text-vapor-bg font-heading font-bold text-center border-0 rounded-none uppercase tracking-widest min-w-[200px] ${bgColor}`;
+
+            messageBox.textContent = message;
+            messageBox.style.opacity = 1;
+
+            clearTimeout(messageBox.timer);
+            messageBox.timer = setTimeout(() => {
+                messageBox.style.opacity = 0;
+            }, 3000);
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
