@@ -1,17 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     // DOM 元素获取
     const inputText = document.getElementById('inputText');
-    const outputText = document.getElementById('outputText');
+    const outputContainer = document.getElementById('outputContainer');
 
     // 按钮
     const convertButton = document.getElementById('convertButton');
-    const clearInputButton = document.getElementById('clearInputButton'); // 新增
+    const clearInputButton = document.getElementById('clearInputButton');
     const copyButton = document.getElementById('copyButton');
-    const generateImageButton = document.getElementById('generateImageButton'); // 新增
+    const generateImageButton = document.getElementById('generateImageButton');
 
     // 状态与选项
     const loadingStatus = document.getElementById('loadingStatus');
-    const compatibilityModeCheckbox = document.getElementById('compatibilityMode'); // 新增
+    const compatibilityModeCheckbox = document.getElementById('compatibilityMode');
 
     // 存储两个映射表
     let mappings = {
@@ -19,16 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
         less: null  // web_mapping_less.json
     };
 
+    // 用于存储转换后的纯文本结果，以便复制使用
+    let currentRawResult = "";
+
     // 并行加载两个字典文件
     Promise.all([
-        fetch('web_mapping.json').then(res => {
-            if (!res.ok) throw new Error("无法读取标准字典");
-            return res.json();
-        }),
-        fetch('web_mapping_less.json').then(res => {
-            if (!res.ok) throw new Error("无法读取兼容字典");
-            return res.json();
-        })
+        fetch('web_mapping.json').then(res => res.ok ? res.json() : Promise.reject("标准字典加载失败")),
+        fetch('web_mapping_less.json').then(res => res.ok ? res.json() : Promise.reject("兼容字典加载失败"))
     ])
         .then(([fullData, lessData]) => {
             mappings.full = fullData;
@@ -44,9 +41,23 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading mappings:', error);
         });
 
+    // 定义缺失字符集
+    const missingCharsString = "𲛯𮱅𲛣𲛍𭒘𭒩𮱛𭒬𭒴𭒣𮱌𲛰𰌆𲛢𭑷𰋶𰌖𲛐𲛧𲛋𭒨𭒵𰋺𲛵𱙭𭒅𱙯𱙅𭶃𮰿𱙂𰌉𭒙𰌇𱙤𭒕𭒢𮱇𭒈𲡱𱙃𭒃𮱂𲛊𰌐𭒗𲛒𰌄𱙘𭤇𮱄𱙕𲛷𱻲𭑾𰋵𱙏𰋸𭒳𭒡𱙮𭒟𮰾𰌁𭒠𭒯𭑵𰌋𱙇𰌈𰗻𭒪𭒭𲛭𭒤𮱉𰋿𰿧𮰽𮰻𱙣𲛞𰇭𰌍𭑩𱙨𮱏𭒏𭑴𱙓𰌃𲛛𭑼𭒫𰌌𱙪𮱎𭒛𱙱𭒖𮱒𱙆𲛙𭒮𭒦𮱆𱙈𰌙𱙟𭂾𭒁𰌊𮱍𭑲𮆝𲛗𲛴𱙐𰋷𲛤𮱙𱨌𮱘𮱐𮰹𲛺𭑪𲽐𲛨𲛲𱙩𮓃𲛳𱙢𲛘𱙑𱦢𲛱𮰸𭑫𱙦𭔖𭒝𲛜𰌒𭑭𲛑𲛓𮱈𱙛𭒂𮱁𱙖𰋾𲛻𱙴𭒥𮍳𮱃𲛬𰌅𮱑𰋽𭑺𭑸𮱕𭒎𲛌𱙫𲛸𰋻𮱖𲛪𭑨𭒐𭒑𭑹𰌔𲛏𰌛𭒧𭑳𱙒𱙡𲛥𮱋𱙄𱙝𱙔𲛖𭒓𮱀𰌀𱙍𮱓𲛕𱙋𭑱𱙎𲛎𭒄𱙙𭒌𮰷𮱚𲛝𭑽𲛔𭤋𱙠𰋹𮰺𲛶𭒇𲛠𮱊𱙞𭑰𭑬𭒚𰌂𭒜𰌎𭑯𭑧𭒆𱙊𲛡𮱔𭑶𰌘𱼰𰌚𮰼𭴇𰋼𲛮𱆶𲛟𰐈𮣭𱀤𱙗𲛩𭑮𱙌𭒔𱙰𭑻𰌑𲍣𲛫𮱗𭒉𱙧𱙚𱙉𮡎𭒀𱙥𭒞𱙲𱙁";
+    const missingCharsSet = new Set(Array.from(missingCharsString));
+
+    // 辅助函数：获取字符的 GlyphWiki SVG URL
+    // GlyphWiki 格式通常为: https://glyphwiki.org/glyph/u[hex].svg
+    function getGlyphHtml(char) {
+        // 使用 codePointAt 获取正确的 Unicode 码点 (支持 4字节字符)
+        const codePoint = char.codePointAt(0);
+        const hexCode = codePoint.toString(16).toLowerCase();
+        const url = `https://glyphwiki.org/glyph/u${hexCode}.svg`;
+
+        return `<span class="svg-icon" title="${char}" style="-webkit-mask-image: url('${url}'); mask-image: url('${url}');"></span>`;
+    }
+
     // 转换按钮点击事件
     convertButton.addEventListener('click', () => {
-        // 检查数据是否加载完成
         if (!mappings.full || !mappings.less) return;
 
         const originalText = inputText.value;
@@ -55,19 +66,40 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 根据复选框状态选择字典
-        const useLess = compatibilityModeCheckbox.checked;
+        const useLess = compatibilityModeCheckbox?.checked;
         const currentMapping = useLess ? mappings.less : mappings.full;
 
         console.log(`开始转换，当前模式: ${useLess ? '兼容模式' : '标准模式'}`);
 
-        const convertedText = Array.from(originalText).map(char => {
-            return currentMapping[char] || char;
-        }).join('');
+        let rawResultArray = [];
+        const convertedHtmlArray = Array.from(originalText).map(char => {
+            let targetChar = currentMapping[char] || char;
 
-        outputText.value = convertedText;
+            // 存入纯文本数组，供复制使用
+            rawResultArray.push(targetChar);
 
-        if (originalText === convertedText) {
+            // 处理特殊显示
+            if (missingCharsSet.has(targetChar)) {
+                return getGlyphHtml(targetChar);
+            }
+
+            // HTML 转义
+            if (targetChar === '<') return '&lt;';
+            if (targetChar === '>') return '&gt;';
+            if (targetChar === '&') return '&amp;';
+            if (targetChar === '\n') return '<br>'; // 处理换行
+
+            return targetChar;
+        });
+
+        // 更新全局状态
+        currentRawResult = rawResultArray.join('');
+
+        // 更新 UI
+        outputContainer.innerHTML = convertedHtmlArray.join('');
+
+        // 反馈
+        if (originalText === currentRawResult && !originalText.split('').some(c => missingCharsSet.has(c))) {
             showMessage('没有检测到可转换的字符', 'error');
         } else {
             showMessage('转换完成！');
@@ -76,9 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 清空输入按钮点击事件
     clearInputButton.addEventListener('click', () => {
-        if (!inputText.value && !outputText.value) return;
+        if (!inputText.value && outputContainer.innerHTML === '') return;
+
         inputText.value = '';
-        outputText.value = '';
+        outputContainer.innerHTML = ''; // 修正：div 使用 innerHTML 清空
+        currentRawResult = ''; // 清空缓存的文本
         inputText.focus();
         showMessage('输入已清空', 'success');
     });
@@ -148,12 +182,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // 复制结果按钮点击事件
-    copyButton.addEventListener('click', function () {
-        if (!outputText.value) {
+    copyButton.addEventListener('click', async function () {
+        // 使用 currentRawResult 确保复制的是字符本身，而不是 HTML 代码
+        const textToCopy = currentRawResult;
+
+        if (!textToCopy) {
             showMessage('输出内容为空，无需复制。', 'error');
             return;
         }
-        outputText.select();
+
+        // 使用现代 Clipboard API
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            showMessage('✅ 成功复制到剪贴板！');
+        } catch (err) {
+            console.error('Clipboard API failed:', err);
+            // 降级方案：创建一个临时 textarea
+            fallbackCopyText(textToCopy);
+        }
+    });
+
+    // 降级复制方案 (兼容旧浏览器或非 HTTPS 环境)
+    function fallbackCopyText(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+
+        // 确保元素不可见但存在于 DOM 中
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+
+        textArea.focus();
+        textArea.select();
+
         try {
             const successful = document.execCommand('copy');
             if (successful) {
@@ -164,7 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             showMessage('复制操作出现错误。', 'error');
         }
-    });
+
+        document.body.removeChild(textArea);
+    }
 
     const modal = document.getElementById('infoModal');
     const trigger = document.getElementById('helpTrigger');
