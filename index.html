@@ -1,316 +1,595 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全女文字转换器 - Vaporwave Edition</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全女文转换器</title>
+  <meta name="description" content="将任意汉字文本转换为含「女」部件的汉字。">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700;900&display=swap"
-        rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        vapor: {
-                            bg: '#2b213a',
-                            surface: '#120458',
-                            primary: '#ff71ce', // Pink
-                            secondary: '#01cdfe', // Cyan
-                            accent: '#05ffa1', // Green
-                            warning: '#fffb96', // Yellow
-                            muted: '#b967ff', // Purple
-                            text: '#ffffff'
-                        }
-                    },
-                    fontFamily: {
-                        heading: ['"Outfit"', 'sans-serif'],
-                        body: ['"Inter"', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'neon-pink': '0 0 5px #ff71ce, 0 0 15px #ff71ce',
-                        'neon-cyan': '0 0 5px #01cdfe, 0 0 15px #01cdfe',
-                        'xl-vapor': '8px 8px 0px rgba(1, 205, 254, 0.3)',
-                    }
-                }
-            }
-        }
-    </script>
+  <style>
+    /* ── 花園明朝字体 ─────────────────────────────── */
+    @font-face {
+      font-family: HanaMinA;
+      src: url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinA.woff2) format("woff2"),
+           url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinA.woff) format("woff");
+      font-display: swap;
+    }
+    @font-face {
+      font-family: HanaMinB;
+      src: url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinB.woff2) format("woff2"),
+           url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinB.woff) format("woff");
+      font-display: swap;
+    }
 
-    <style>
-        :root {
-            --color-success: #05ffa1;
-            --color-warning: #fffb96;
-            --color-error: #ff71ce;
-            --color-info: #01cdfe;
-            --color-primary: #ff71ce;
-            --color-secondary: #01cdfe;
-            --color-accent: #05ffa1;
-            --color-background: #2b213a;
-            --color-surface: #120458;
-            --color-text: #ffffff;
-            --color-muted: #b967ff;
-            --font-heading: "Outfit", sans-serif;
-            --font-body: "Inter", sans-serif;
-        }
+    /* ── 设计令牌 ─────────────────────────────────── */
+    :root {
+      --ink:        #0e0d0b;
+      --ink-surface:#1a1814;
+      --ink-raised: #232019;
+      --ink-border: #2e2b26;
+      --ink-muted:  #4a4540;
+      --paper:      #f2ede6;
+      --paper-dim:  #b8b0a4;
+      --vermilion:  #c0392b;
+      --vermilion-hover: #a93226;
+      --font-ui: "Noto Serif SC", "HanaMinA", "HanaMinB", serif;
+      --font-hanzi: "HanaMinA", "HanaMinB", "Noto Serif SC", serif;
+    }
 
-        @font-face {
-            font-family: HanaMinB;
-            src: url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinB.woff2) format("woff2"), url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinB.woff) format("woff");
-        }
+    /* ── 重置 ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        @font-face {
-            font-family: HanaMinA;
-            src: url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinA.woff2) format("woff2"), url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinA.woff) format("woff");
-        }
+    /* ── 全局 ─────────────────────────────────────── */
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
 
-        body {
-            font-family: var(--font-body);
-            background-color: var(--color-background);
-            color: var(--color-text);
-            /* Retro Grid Background */
-            background-image:
-                linear-gradient(var(--color-surface) 1px, transparent 1px),
-                linear-gradient(90deg, var(--color-surface) 1px, transparent 1px);
-            background-size: 40px 40px;
-            background-position: center top;
-        }
+    body {
+      font-family: var(--font-ui);
+      background-color: var(--ink);
+      color: var(--paper);
+      /* 墨迹晕染背景 */
+      background-image:
+        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(120,60,20,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 80% 10%, rgba(80,40,10,0.08) 0%, transparent 70%);
+    }
 
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle, transparent 40%, var(--color-background) 100%);
-            pointer-events: none;
-            z-index: -1;
-        }
+    /* ── 纸张纹理（SVG 噪点） ──────────────────────── */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 200px;
+    }
 
-        .hanzi-box {
-            font-family: "HanaMinA", "HanaMinB", "SimSun", serif, sans-serif;
+    /* ── 「女」字水印 ─────────────────────────────── */
+    body::after {
+      content: "女";
+      position: fixed;
+      right: -0.1em;
+      bottom: -0.15em;
+      font-family: var(--font-hanzi);
+      font-size: clamp(14rem, 30vw, 28rem);
+      font-weight: 300;
+      line-height: 1;
+      color: var(--paper);
+      opacity: 0.025;
+      pointer-events: none;
+      z-index: 0;
+      user-select: none;
+    }
 
-            background-color: var(--color-background);
-            color: var(--color-accent);
-            border: 2px solid rgba(5, 255, 161, 0.5);
-            padding: 1rem;
+    /* ── 应用容器 ─────────────────────────────────── */
+    #app {
+      position: relative;
+      z-index: 1;
+      height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: clamp(0.75rem, 2vw, 1.25rem) clamp(1rem, 3vw, 2rem);
+      gap: 0.75rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
 
-            font-size: 1.125rem;
-            font-weight: 700;
-            line-height: 1.5;
-            width: 100%;
+    /* ── 头部 ─────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--ink-border);
+      flex-shrink: 0;
+    }
 
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            overflow-y: auto;
-            display: block;
-        }
+    .title-group {
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+    }
 
-        .hanzi-box::-webkit-scrollbar,
-        textarea::-webkit-scrollbar {
-            width: 10px;
-        }
+    h1 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--paper);
+      line-height: 1;
+    }
 
-        .hanzi-box::-webkit-scrollbar-track,
-        textarea::-webkit-scrollbar-track {
-            background: #1a0b2e;
-        }
+    .title-sub {
+      font-size: 0.7rem;
+      font-weight: 300;
+      color: var(--paper-dim);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
 
-        .hanzi-box::-webkit-scrollbar-thumb,
-        textarea::-webkit-scrollbar-thumb {
-            background: var(--color-secondary);
-            border: 1px solid var(--color-surface);
-        }
+    /* ── 帮助按钮 ─────────────────────────────────── */
+    .btn-help {
+      background: none;
+      border: 1px solid var(--ink-border);
+      color: var(--paper-dim);
+      width: 1.8rem;
+      height: 1.8rem;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-help:hover { border-color: var(--vermilion); color: var(--paper); }
 
-        #outputContainer {
-            height: 135.2px;
-        }
+    /* ── 主内容区（分栏） ────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      min-height: 0;
+    }
 
-        .svg-icon {
-            background-color: currentColor;
-            display: inline-block;
-            height: 1.1em;
-            width: 1.1em;
-            vertical-align: -0.2em;
-            -webkit-mask-repeat: no-repeat;
-            mask-repeat: no-repeat;
-            -webkit-mask-size: contain;
-            mask-size: contain;
-            pointer-events: none;
-        }
+    @media (max-width: 640px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+    }
 
-        .loading-spinner {
-            border-top-color: var(--color-success);
-            border-right-color: var(--color-secondary);
-            border-bottom-color: var(--color-primary);
-            border-left-color: var(--color-muted);
-            -webkit-animation: spinner 1s linear infinite;
-            animation: spinner 1s linear infinite;
-        }
+    /* ── 面板通用 ─────────────────────────────────── */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      border-top: 2px solid var(--ink-border);
+      padding-top: 0.5rem;
+    }
 
-        @keyframes spinner {
-            0% {
-                transform: rotate(0deg);
-            }
+    .panel--output { border-top-color: var(--vermilion); }
 
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+    .panel-label {
+      font-size: 0.65rem;
+      font-weight: 400;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--paper-dim);
+      margin-bottom: 0.4rem;
+      flex-shrink: 0;
+    }
 
-        .text-glow {
-            text-shadow: 0 0 10px var(--color-primary), 0 0 20px var(--color-primary);
-        }
+    .panel--output .panel-label { color: var(--vermilion); opacity: 0.8; }
 
-        .text-glow-cyan {
-            text-shadow: 0 0 10px var(--color-secondary);
-        }
-    </style>
+    /* ── 输入框 ───────────────────────────────────── */
+    #inputText {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      resize: none;
+      background: var(--ink-surface);
+      color: var(--paper);
+      border: 1px solid var(--ink-border);
+      padding: 0.75rem;
+      font-family: var(--font-hanzi);
+      font-size: clamp(1rem, 1.8vw, 1.25rem);
+      line-height: 1.6;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #inputText::placeholder { color: var(--ink-muted); }
+    #inputText:focus { border-color: var(--paper-dim); }
+
+    /* ── 输出框 ───────────────────────────────────── */
+    #outputContainer {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      background: var(--ink-surface);
+      border: 1px solid var(--ink-border);
+      padding: 0.75rem;
+      font-family: var(--font-hanzi);
+      font-size: clamp(1rem, 1.8vw, 1.25rem);
+      line-height: 1.6;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--paper);
+    }
+
+    .output-placeholder {
+      color: var(--ink-muted);
+      font-size: 0.85rem;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── SVG fallback 图标（生僻字） ─────────────── */
+    .svg-icon {
+      background-color: currentColor;
+      display: inline-block;
+      height: 1.1em;
+      width: 1.1em;
+      vertical-align: -0.2em;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+    }
+
+    /* ── 滚动条 ───────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--ink); }
+    ::-webkit-scrollbar-thumb { background: var(--ink-border); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+
+    /* ── 底部工具栏 ───────────────────────────────── */
+    footer {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: nowrap;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--ink-border);
+      flex-shrink: 0;
+    }
+
+    /* 兼容模式 toggle */
+    .compat-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-right: auto;
+    }
+
+    .toggle-wrap {
+      position: relative;
+      width: 2.2rem;
+      height: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .toggle-wrap input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--ink-border);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-wrap input:checked ~ .toggle-track { background: var(--vermilion); }
+
+    .toggle-track::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: calc(1.2rem - 4px);
+      height: calc(1.2rem - 4px);
+      background: var(--paper);
+      transition: transform 0.2s;
+    }
+
+    .toggle-wrap input:checked ~ .toggle-track::after {
+      transform: translateX(1rem);
+    }
+
+    .compat-label {
+      font-size: 0.65rem;
+      color: var(--paper-dim);
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* ── 按钮通用 ─────────────────────────────────── */
+    .btn {
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--ink-border);
+      background: none;
+      color: var(--paper-dim);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
+      outline: none;
+    }
+
+    .btn:hover { border-color: var(--paper-dim); color: var(--paper); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--vermilion);
+      border-color: var(--vermilion);
+      color: var(--paper);
+      font-weight: 500;
+    }
+    .btn-primary:hover { background: var(--vermilion-hover); border-color: var(--vermilion-hover); color: var(--paper); }
+    .btn-primary:disabled {
+      background: var(--ink-raised);
+      border-color: var(--ink-border);
+      color: var(--ink-muted);
+      cursor: not-allowed;
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.97); }
+
+    .btn-icon {
+      padding: 0.4rem 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* ── 加载骨架 ─────────────────────────────────── */
+    #loadingStatus {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.7rem;
+      color: var(--paper-dim);
+      letter-spacing: 0.1em;
+    }
+
+    .skeleton-line {
+      height: 0.8em;
+      background: linear-gradient(90deg, var(--ink-surface) 25%, var(--ink-raised) 50%, var(--ink-surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Toast 提示 ────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 4rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--ink-raised);
+      color: var(--paper);
+      border: 1px solid var(--ink-border);
+      padding: 0.4rem 1rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    #toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    #toast.error { border-color: var(--vermilion); color: var(--vermilion); }
+
+    /* ── 弹窗 ─────────────────────────────────────── */
+    #infoModal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    #infoModal.open { display: flex; }
+
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(14, 13, 11, 0.85);
+      cursor: pointer;
+    }
+
+    .modal-box {
+      position: relative;
+      z-index: 1;
+      background: var(--ink-surface);
+      border: 1px solid var(--ink-border);
+      border-top: 2px solid var(--vermilion);
+      padding: 1.5rem;
+      max-width: 480px;
+      width: 100%;
+      max-height: 80dvh;
+      overflow-y: auto;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--paper-dim);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0.2rem;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--paper); }
+
+    .modal-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--ink-border);
+    }
+
+    .modal-body p, .modal-body li {
+      font-size: 0.82rem;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--paper-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-body li { list-style: none; padding-left: 1em; }
+    .modal-body li::before { content: "—"; margin-right: 0.4em; color: var(--ink-muted); }
+
+    .modal-footer {
+      margin-top: 1.2rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--ink-border);
+      display: flex;
+      justify-content: flex-end;
+    }
+  </style>
 </head>
 
-<body class="flex items-center justify-center min-h-screen p-4 selection:bg-vapor-primary selection:text-white">
+<body>
+  <div id="app">
+    <!-- 头部 -->
+    <header>
+      <div class="title-group">
+        <h1>全女文</h1>
+        <span class="title-sub">Her Character Converter</span>
+      </div>
+      <button class="btn-help" id="helpTrigger" aria-label="说明" title="说明">?</button>
+    </header>
 
-    <div id="app-container"
-        class="bg-vapor-surface border border-vapor-secondary/30 p-6 md:p-8 shadow-xl-vapor w-full max-w-lg relative overflow-hidden rounded-none">
+    <!-- 主内容 -->
+    <div class="main-grid">
+      <!-- 输入面板 -->
+      <div class="panel">
+        <div class="panel-label">输入</div>
+        <textarea
+          id="inputText"
+          placeholder="在此输入文字..."
+          spellcheck="false"
+          aria-label="输入文字"
+        ></textarea>
+      </div>
 
+      <!-- 输出面板 -->
+      <div class="panel panel--output">
+        <div class="panel-label">输出</div>
         <div
-            class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-vapor-secondary via-vapor-primary to-vapor-accent">
+          id="outputContainer"
+          role="region"
+          aria-label="转换结果"
+          aria-live="polite"
+        >
+          <div id="loadingStatus">
+            <div class="skeleton-line" style="width: 6rem;"></div>
+            <span>加载字典中</span>
+          </div>
         </div>
-
-        <h1
-            class="text-3xl font-heading font-black text-transparent bg-clip-text bg-gradient-to-r from-vapor-secondary to-vapor-primary mb-2 text-center tracking-wide uppercase italic pr-2">
-            全女文字转换器
-        </h1>
-        <p class="text-center text-vapor-muted text-xs mb-8 font-mono tracking-widest uppercase">
-            // HER_CHARACTER_CONVERTER_V1.0
-        </p>
-
-        <div id="loadingStatus" class="flex items-center justify-center space-x-3 mb-6 text-vapor-secondary">
-            <div class="loading-spinner ease-linear rounded-full border-4 h-6 w-6"></div>
-            <span class="text-sm font-bold tracking-wider">LOADING_DATA...</span>
-        </div>
-
-        <div>
-            <label for="inputText" class="block text-sm font-bold text-vapor-secondary mb-2 uppercase tracking-wider">
-                > Input Data
-            </label>
-            <textarea id="inputText" rows="4"
-                class="hanzi-box w-full p-3 bg-vapor-bg/80 border-2 border-vapor-muted text-vapor-primary focus:border-vapor-secondary focus:shadow-neon-cyan focus:outline-none transition-all duration-300 resize-none placeholder-vapor-muted/50 rounded-none"
-                placeholder="在此输入文字..."></textarea>
-        </div>
-
-        <div class="flex justify-end items-center mb-2 mt-3 group select-none">
-            <input id="compatibilityMode" type="checkbox"
-                class="appearance-none w-5 h-5 border-2 border-vapor-primary bg-vapor-bg checked:bg-vapor-primary checked:border-vapor-success focus:ring-0 cursor-pointer transition-colors relative rounded-none">
-
-            <label for="compatibilityMode"
-                class="ml-3 text-xs font-bold text-vapor-muted group-hover:text-vapor-primary cursor-pointer uppercase tracking-widest transition-colors">
-                兼容模式 [Compatibility]
-            </label>
-
-            <button id="helpTrigger" type="button" class="ml-2 focus:outline-none group/icon" aria-label="了解兼容模式">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                    stroke="currentColor"
-                    class="w-5 h-5 text-vapor-secondary transition-all duration-300 group-hover/icon:text-vapor-primary group-hover/icon:drop-shadow-[0_0_5px_rgba(255,113,206,0.8)]">
-                    <path stroke-linecap="square" stroke-linejoin="miter"
-                        d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mt-4">
-            <button id="clearInputButton"
-                class="text-sm w-full bg-transparent border-2 border-vapor-muted text-vapor-muted hover:bg-vapor-muted hover:text-white hover:shadow-neon-pink font-heading font-bold py-3 px-4 transition-all duration-200 uppercase tracking-wider rounded-none">
-                🗑️ 清空输入
-            </button>
-            <button id="convertButton" disabled
-                class="text-sm w-full bg-gradient-to-r from-vapor-primary to-purple-600 hover:from-vapor-accent hover:to-vapor-secondary text-white disabled:from-gray-700 disabled:to-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed font-heading font-bold py-3 px-4 shadow-lg transition-all duration-200 hover:shadow-neon-pink uppercase tracking-wider rounded-none border-none">
-                ✨ 立即转换
-            </button>
-        </div>
-
-        <div>
-            <label class="block text-sm font-bold text-vapor-accent mb-2 mt-4 uppercase tracking-wider">
-                > System Output
-            </label>
-
-            <div id="outputContainer"
-                class="hanzi-box w-full p-3 overflow-y-auto whitespace-pre-wrap text-lg bg-vapor-bg text-vapor-accent border-2 border-vapor-accent/50 transition-all duration-300 rounded-none">
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mt-4">
-            <button id="generateImageButton"
-                class="text-sm w-full bg-vapor-secondary hover:bg-cyan-300 text-vapor-bg font-heading font-black py-3 px-4 shadow-lg transition-all duration-200 hover:shadow-neon-cyan uppercase tracking-wider rounded-none">
-                🖼️ 生成图片
-            </button>
-            <button id="copyButton"
-                class="text-sm w-full bg-vapor-accent hover:bg-green-300 text-vapor-bg font-heading font-black py-3 px-4 shadow-lg transition-all duration-200 hover:shadow-[0_0_15px_#05ffa1] uppercase tracking-wider rounded-none">
-                📋 复制结果
-            </button>
-        </div>
+      </div>
     </div>
 
-    <div id="infoModal" class="fixed inset-0 z-50 hidden">
-        <div id="modalOverlay" class="absolute inset-0 bg-vapor-bg/80 backdrop-blur-sm transition-opacity"></div>
+    <!-- 底部工具栏 -->
+    <footer>
+      <!-- 兼容模式 -->
+      <div class="compat-group">
+        <label class="toggle-wrap" aria-label="兼容模式">
+          <input type="checkbox" id="compatibilityMode">
+          <span class="toggle-track"></span>
+        </label>
+        <label class="compat-label" for="compatibilityMode">兼容模式</label>
+      </div>
 
-        <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div
-                class="relative w-full max-w-2xl bg-vapor-surface border-2 border-vapor-primary shadow-neon-pink transform transition-all p-6 md:p-8 overflow-y-auto max-h-[90vh]">
+      <!-- 操作按钮 -->
+      <button class="btn btn-icon" id="clearInputButton" aria-label="清空">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        清空
+      </button>
 
-                <button id="closeModal"
-                    class="absolute top-4 right-4 text-vapor-secondary hover:text-vapor-accent transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="square" stroke-linejoin="miter" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+      <button class="btn btn-primary" id="convertButton" disabled aria-label="转换">
+        转换
+      </button>
 
-                <h2
-                    class="text-2xl md:text-3xl font-heading text-vapor-primary uppercase tracking-widest mb-6 border-b-2 border-vapor-muted/30 pb-2 text-glow">
-                    COMPATIBILITY
-                </h2>
+      <button class="btn btn-icon" id="generateImageButton" aria-label="生成图片">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><rect x="3" y="3" width="18" height="18"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        图片
+      </button>
 
-                <div class="space-y-6 font-body text-vapor-text leading-relaxed text-sm md:text-base">
+      <button class="btn btn-icon" id="copyButton" aria-label="复制">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        复制
+      </button>
+    </footer>
+  </div>
 
-                    <div>
-                        <h3 class="text-vapor-secondary font-bold text-lg mb-2 flex items-center">
-                            <span class="mr-2 text-vapor-accent">></span> 为什么要有兼容模式？
-                        </h3>
-                        <ul class="list-none space-y-2 pl-4 border-l-2 border-vapor-muted/50 text-gray-300">
-                            <li>
-                                当一种字体缺少某些字符时，无法显示的字符会变成方块“□”，一般惯称为“tofu”，即“豆腐”之意。
-                            </li>
-                            <li>
-                                本网页通过联网加载在线字体的方式，来确保正常显示生僻字。
-                            </li>
-                            <li>
-                                当您想复制含生僻字的结果分享给朋友时，如果您或对方的设备没有安装合适的字体，依然会出现“豆腐块”现象。
-                            </li>
-                            <li>
-                                开启兼容模式，可以防止输入文本被转换成大多数字体可能未收录的生僻字。
-                            </li>
-                    </div>
-                </div>
+  <!-- Toast -->
+  <div id="toast" role="status" aria-live="polite"></div>
 
-                <div class="mt-8 pt-4 border-t border-vapor-muted/30 text-right">
-                    <button id="closeModalBtn"
-                        class="px-6 py-2 bg-vapor-secondary text-vapor-bg font-bold hover:bg-vapor-primary hover:text-white transition-colors uppercase tracking-wider text-sm">
-                        明白
-                    </button>
-                </div>
-            </div>
-        </div>
+  <!-- 说明弹窗 -->
+  <div id="infoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal-box">
+      <button class="modal-close" id="closeModal" aria-label="关闭">&#x2715;</button>
+
+      <div class="modal-title" id="modalTitle">关于兼容模式</div>
+
+      <div class="modal-body">
+        <p>「全女文」将文字中每个汉字，替换为含有「女」部件的汉字。</p>
+
+        <p style="margin-top: 0.8rem; color: var(--paper); font-weight: 400;">为何要有兼容模式？</p>
+
+        <ul>
+          <li>许多字体未收录罕见汉字，缺字会显示为方块「□」（豆腐块）。</li>
+          <li>本页通过联网加载花園明朝字体，尽量显示生僻字。</li>
+          <li>复制结果分享给他人时，对方设备未必有合适字体。</li>
+          <li>兼容模式仅输出常用汉字区（BMP）内的含女字，减少豆腐块。</li>
+        </ul>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="closeModalBtn">明白</button>
+      </div>
     </div>
+  </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="app.js"></script>
 </body>
-
 </html>
