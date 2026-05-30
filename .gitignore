@@ -20,4 +20,5 @@ venv/
 # Claude Code
 CLAUDE.md
 .agents/
+.claude/
 skills-lock.json
