@@ -167,16 +167,8 @@ def stage_mapping():
     basic_hanzi = load_json(ALL_BASIC_HANZI_FILE)
     nyu_hanzi = load_json(NYU_HANZI_FILE)
 
-    try:
-        mapping = load_json(MAPPING_FILE)
-    except (FileNotFoundError, json.JSONDecodeError):
-        mapping = {}
-
-    # 加载现有 mapping 到 buffer（集合去重）
+    # 从零构建，保证结果是 raw_data 的确定性函数（mapping.json 为可重建中间产物）
     buffer = collections.defaultdict(set)
-    for k, v in mapping.items():
-        if v:
-            buffer[k].update(list(v))
 
     # 构建 basic 汉字组件倒排索引
     print("  构建部件倒排索引...")
@@ -212,25 +204,27 @@ def stage_mapping():
             for target in matched:
                 buffer[target].add(hanzi)
 
-    # 转回普通 dict，排序字符串保持确定性，移除与 nyu 重叠的键
-    nyu_keys = set(nyu_hanzi.keys())
+    # 转回普通 dict，只保留基础汉字键（all_basic 已排除含「女」字）
+    basic_keys = set(basic_hanzi.keys())
     final = {
         k: "".join(sorted(v))
         for k, v in buffer.items()
-        if k not in nyu_keys
+        if k in basic_keys
     }
+    # 确保每个基础汉字都是键（暂可为空，后续由推断/兜底填充）
+    for k in basic_keys:
+        final.setdefault(k, "")
 
-    save_json(final, MAPPING_FILE)
     print(
         f"  单部件匹配: {single_count}  组件整体匹配: {match_count}  "
-        f"最终键数: {len(final)}"
+        f"结构匹配: {sum(1 for v in final.values() if v)} / {len(final)}"
     )
 
-    # 拼音兜底（需要 pypinyin）
-    _fill_by_pinyin(nyu_hanzi, final)
-
-    # 上下文/拼音声旁推断
+    # 1) 声旁/上下文推断（结构性，优先于拼音兜底）
     _advanced_mapping(basic_hanzi, nyu_hanzi, final)
+
+    # 2) 同音字兜底：保证每个基础汉字至少有一个映射
+    _fill_by_pinyin(basic_hanzi, nyu_hanzi, final)
 
     save_json(final, MAPPING_FILE)
     nonempty = sum(1 for v in final.values() if v)
@@ -240,37 +234,76 @@ def stage_mapping():
     )
 
 
-def _fill_by_pinyin(nyu_hanzi, mapping):
+def _fill_by_pinyin(basic_hanzi, nyu_hanzi, mapping):
+    """同音字兜底：为仍无映射的基础汉字按音近程度分级匹配含「女」汉字。
+
+    分级（从强到弱，命中即停）：
+      1. 声调精确同音（如 nü3 == nü3）
+      2. 去声调同音节（如 ma == ma，不论声调）
+      3. 同声母（如 b* 对 b*）
+      4. 常量兜底「女」（极生僻字、无同声母含女字时）
+    """
     try:
         from pypinyin import Style, pinyin
     except ImportError:
         print("  [跳过] pypinyin 未安装，跳过同音字兜底")
+        # 至少保证非空：用「女」兜底
+        filled = 0
+        for char, val in mapping.items():
+            if not val:
+                mapping[char] = "女"
+                filled += 1
+        print(f"  常量兜底填充: {filled} 个")
         return
 
     print("  构建拼音索引（同音字兜底）...")
 
-    pinyin_index = collections.defaultdict(set)
-    for char in nyu_hanzi:
-        for sublist in pinyin(char, heteronym=False, style=Style.TONE3):
-            for p in sublist:
-                pinyin_index[p].add(char)
+    def first_py(char, style):
+        res = pinyin(char, heteronym=False, style=style)
+        return res[0][0] if res and res[0] else None
 
-    def get_pinyins(char):
-        result = pinyin(char, heteronym=False, style=Style.TONE3)
-        return sorted({p for sub in result for p in sub})
+    # 以含「女」汉字为候选池，分别建三级索引
+    idx_tone = collections.defaultdict(set)   # 声调精确
+    idx_plain = collections.defaultdict(set)  # 去声调同音节
+    idx_initial = collections.defaultdict(set)  # 同声母
+    for ch in nyu_hanzi:
+        t = first_py(ch, Style.TONE3)
+        if t:
+            idx_tone[t].add(ch)
+        p = first_py(ch, Style.NORMAL)
+        if p:
+            idx_plain[p].add(ch)
+        i = first_py(ch, Style.FIRST_LETTER)
+        if i:
+            idx_initial[i].add(ch)
 
-    filled = 0
+    t_cnt = p_cnt = i_cnt = const_cnt = 0
     for char, val in mapping.items():
         if val:
             continue
-        matched = set()
-        for p in get_pinyins(char):
-            matched.update(pinyin_index.get(p, set()))
-        matched.discard(char)
-        if matched:
-            mapping[char] = "".join(sorted(matched))
-            filled += 1
-    print(f"  同音字兜底填充: {filled} 个")
+        t = first_py(char, Style.TONE3)
+        if t and idx_tone.get(t):
+            mapping[char] = "".join(sorted(idx_tone[t]))
+            t_cnt += 1
+            continue
+        p = first_py(char, Style.NORMAL)
+        if p and idx_plain.get(p):
+            mapping[char] = "".join(sorted(idx_plain[p]))
+            p_cnt += 1
+            continue
+        i = first_py(char, Style.FIRST_LETTER)
+        if i and idx_initial.get(i):
+            mapping[char] = "".join(sorted(idx_initial[i]))
+            i_cnt += 1
+            continue
+        # 末级：无任何音近含女字（生僻符号等）
+        mapping[char] = "女"
+        const_cnt += 1
+
+    print(
+        f"  同音字兜底 — 精确同音: {t_cnt}  同音节: {p_cnt}  "
+        f"同声母: {i_cnt}  常量「女」: {const_cnt}"
+    )
 
 
 def _advanced_mapping(basic_hanzi, nyu_hanzi, mapping):
