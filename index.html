@@ -8,10 +8,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Noto Serif SC: 标签、按钮、说明用字 -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* ── 花園明朝字体 ─────────────────────────────── */
+    /* ── 花園明朝：仅用于输入框、输出框、标题 ─── */
     @font-face {
       font-family: HanaMinA;
       src: url(https://cdn.jsdelivr.net/gh/max32002/max-hana@1.1/webfont/HanaMinA.woff2) format("woff2"),
@@ -25,25 +26,30 @@
       font-display: swap;
     }
 
-    /* ── 设计令牌 ─────────────────────────────────── */
+    /* ── 设计令牌 ─────────────────────────────── */
     :root {
-      --ink:        #0e0d0b;
-      --ink-surface:#1a1814;
-      --ink-raised: #232019;
-      --ink-border: #2e2b26;
-      --ink-muted:  #4a4540;
-      --paper:      #f2ede6;
-      --paper-dim:  #b8b0a4;
-      --vermilion:  #c0392b;
-      --vermilion-hover: #a93226;
-      --font-ui: "Noto Serif SC", "HanaMinA", "HanaMinB", serif;
+      /* 暖米白色系（warm bone palette） */
+      --canvas:       #F7F6F3;
+      --surface:      #FFFFFF;
+      --surface-2:    #F2F0EC;
+      --border:       rgba(0, 0, 0, 0.09);
+      --border-strong:rgba(0, 0, 0, 0.15);
+      --text-primary: #1C1917;
+      --text-secondary:#57534E;
+      --text-muted:   #A8A29E;
+      --accent:       #9F2F2D;      /* 朱砂红，desaturated */
+      --accent-bg:    #FDEBEC;
+      --accent-hover: #7F2422;
+
+      --font-ui: "Noto Serif SC", serif;
+      /* 花園明朝仅用于汉字显示区 */
       --font-hanzi: "HanaMinA", "HanaMinB", "Noto Serif SC", serif;
     }
 
-    /* ── 重置 ─────────────────────────────────────── */
+    /* ── 重置 ─────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── 全局 ─────────────────────────────────────── */
+    /* ── 全局 ─────────────────────────────────── */
     html, body {
       height: 100%;
       overflow: hidden;
@@ -51,109 +57,116 @@
 
     body {
       font-family: var(--font-ui);
-      background-color: var(--ink);
-      color: var(--paper);
-      /* 墨迹晕染背景 */
-      background-image:
-        radial-gradient(ellipse 60% 40% at 20% 80%, rgba(120,60,20,0.06) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 60% at 80% 10%, rgba(80,40,10,0.08) 0%, transparent 70%);
+      background-color: var(--canvas);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── 纸张纹理（SVG 噪点） ──────────────────────── */
+    /* 极淡纸纹（pointer-events-none, 不遮挡交互） */
     body::before {
       content: "";
       position: fixed;
       inset: 0;
       pointer-events: none;
       z-index: 0;
-      opacity: 0.04;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
       background-repeat: repeat;
       background-size: 200px 200px;
     }
 
-    /* ── 「女」字水印 ─────────────────────────────── */
+    /* 「女」字水印 */
     body::after {
       content: "女";
       position: fixed;
-      right: -0.1em;
-      bottom: -0.15em;
+      right: -0.05em;
+      bottom: -0.12em;
       font-family: var(--font-hanzi);
-      font-size: clamp(14rem, 30vw, 28rem);
+      font-size: clamp(12rem, 28vw, 26rem);
       font-weight: 300;
       line-height: 1;
-      color: var(--paper);
-      opacity: 0.025;
+      color: var(--accent);
+      opacity: 0.04;
       pointer-events: none;
       z-index: 0;
       user-select: none;
     }
 
-    /* ── 应用容器 ─────────────────────────────────── */
+    /* ── 应用容器 ─────────────────────────────── */
     #app {
       position: relative;
       z-index: 1;
       height: 100dvh;
       display: grid;
       grid-template-rows: auto 1fr auto;
-      padding: clamp(0.75rem, 2vw, 1.25rem) clamp(1rem, 3vw, 2rem);
-      gap: 0.75rem;
+      padding: clamp(0.9rem, 2vw, 1.4rem) clamp(1.2rem, 3vw, 2.2rem);
+      gap: 0.9rem;
       max-width: 1400px;
       margin: 0 auto;
     }
 
-    /* ── 头部 ─────────────────────────────────────── */
+    /* ── 头部 ─────────────────────────────────── */
     header {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--ink-border);
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
     .title-group {
       display: flex;
       align-items: baseline;
-      gap: 0.8rem;
+      gap: 0.75rem;
     }
 
     h1 {
-      font-size: clamp(1.4rem, 3vw, 2rem);
+      /* 标题用花園明朝 */
+      font-family: var(--font-hanzi);
+      font-size: clamp(1.6rem, 3.2vw, 2.2rem);
       font-weight: 700;
-      letter-spacing: 0.12em;
-      color: var(--paper);
+      letter-spacing: 0.06em;
+      color: var(--text-primary);
       line-height: 1;
     }
 
     .title-sub {
-      font-size: 0.7rem;
-      font-weight: 300;
-      color: var(--paper-dim);
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
+      font-family: var(--font-ui);
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
     }
 
-    /* ── 帮助按钮 ─────────────────────────────────── */
+    /* ── 帮助按钮 ─────────────────────────────── */
     .btn-help {
       background: none;
-      border: 1px solid var(--ink-border);
-      color: var(--paper-dim);
-      width: 1.8rem;
-      height: 1.8rem;
+      border: 1px solid var(--border-strong);
+      color: var(--text-secondary);
+      width: 2rem;
+      height: 2rem;
+      border-radius: 4px;
       cursor: pointer;
       font-family: var(--font-ui);
-      font-size: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 500;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: border-color 0.2s, color 0.2s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-    .btn-help:hover { border-color: var(--vermilion); color: var(--paper); }
+    .btn-help:hover {
+      background: var(--surface);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
 
-    /* ── 主内容区（分栏） ────────────────────────── */
+    /* ── 主内容区 ─────────────────────────────── */
     .main-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -168,73 +181,83 @@
       }
     }
 
-    /* ── 面板通用 ─────────────────────────────────── */
+    /* ── 面板 ─────────────────────────────────── */
     .panel {
       display: flex;
       flex-direction: column;
       min-height: 0;
-      border-top: 2px solid var(--ink-border);
-      padding-top: 0.5rem;
     }
 
-    .panel--output { border-top-color: var(--vermilion); }
-
     .panel-label {
-      font-size: 0.65rem;
-      font-weight: 400;
-      letter-spacing: 0.22em;
+      font-family: var(--font-ui);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--paper-dim);
+      color: var(--text-muted);
       margin-bottom: 0.4rem;
       flex-shrink: 0;
     }
 
-    .panel--output .panel-label { color: var(--vermilion); opacity: 0.8; }
+    .panel--output .panel-label {
+      color: var(--accent);
+    }
 
-    /* ── 输入框 ───────────────────────────────────── */
+    /* ── 输入框（花園明朝） ────────────────────── */
     #inputText {
       flex: 1;
       min-height: 0;
       width: 100%;
       resize: none;
-      background: var(--ink-surface);
-      color: var(--paper);
-      border: 1px solid var(--ink-border);
-      padding: 0.75rem;
+      background: var(--surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--border-strong);
+      border-radius: 0 0 4px 4px;
+      padding: 0.9rem 1rem;
       font-family: var(--font-hanzi);
-      font-size: clamp(1rem, 1.8vw, 1.25rem);
-      line-height: 1.6;
+      font-size: clamp(1rem, 1.6vw, 1.2rem);
+      line-height: 1.65;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    #inputText::placeholder { color: var(--ink-muted); }
-    #inputText:focus { border-color: var(--paper-dim); }
+    #inputText::placeholder {
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+    }
+    #inputText:focus {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 3px rgba(159, 47, 45, 0.07);
+    }
 
-    /* ── 输出框 ───────────────────────────────────── */
+    /* ── 输出框（花園明朝） ────────────────────── */
     #outputContainer {
       flex: 1;
       min-height: 0;
       width: 100%;
-      background: var(--ink-surface);
-      border: 1px solid var(--ink-border);
-      padding: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      border-radius: 0 0 4px 4px;
+      padding: 0.9rem 1rem;
       font-family: var(--font-hanzi);
-      font-size: clamp(1rem, 1.8vw, 1.25rem);
-      line-height: 1.6;
+      font-size: clamp(1rem, 1.6vw, 1.2rem);
+      line-height: 1.65;
       overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-word;
-      color: var(--paper);
+      color: var(--text-primary);
     }
 
     .output-placeholder {
-      color: var(--ink-muted);
-      font-size: 0.85rem;
-      font-weight: 300;
-      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+      font-size: 0.88rem;
+      font-weight: 400;
     }
 
-    /* ── SVG fallback 图标（生僻字） ─────────────── */
+    /* ── SVG fallback（生僻字） ───────────────── */
     .svg-icon {
       background-color: currentColor;
       display: inline-block;
@@ -247,35 +270,35 @@
       mask-size: contain;
     }
 
-    /* ── 滚动条 ───────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--ink); }
-    ::-webkit-scrollbar-thumb { background: var(--ink-border); }
-    ::-webkit-scrollbar-thumb:hover { background: var(--ink-muted); }
+    /* ── 滚动条 ───────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-    /* ── 底部工具栏 ───────────────────────────────── */
+    /* ── 底部工具栏 ───────────────────────────── */
     footer {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       flex-wrap: nowrap;
-      padding-top: 0.5rem;
-      border-top: 1px solid var(--ink-border);
+      padding-top: 0.7rem;
+      border-top: 1px solid var(--border);
       flex-shrink: 0;
     }
 
-    /* 兼容模式 toggle */
+    /* 兼容模式区 */
     .compat-group {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.5rem;
       margin-right: auto;
     }
 
     .toggle-wrap {
       position: relative;
-      width: 2.2rem;
-      height: 1.2rem;
+      width: 2.4rem;
+      height: 1.3rem;
       flex-shrink: 0;
     }
 
@@ -289,89 +312,117 @@
     .toggle-track {
       position: absolute;
       inset: 0;
-      background: var(--ink-border);
+      background: var(--border-strong);
+      border-radius: 99px;
       cursor: pointer;
       transition: background 0.2s;
     }
 
-    .toggle-wrap input:checked ~ .toggle-track { background: var(--vermilion); }
+    .toggle-wrap input:checked ~ .toggle-track {
+      background: var(--accent);
+    }
 
     .toggle-track::after {
       content: "";
       position: absolute;
       top: 2px;
       left: 2px;
-      width: calc(1.2rem - 4px);
-      height: calc(1.2rem - 4px);
-      background: var(--paper);
+      width: calc(1.3rem - 4px);
+      height: calc(1.3rem - 4px);
+      background: #fff;
+      border-radius: 50%;
       transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
     }
 
     .toggle-wrap input:checked ~ .toggle-track::after {
-      transform: translateX(1rem);
+      transform: translateX(1.1rem);
     }
 
     .compat-label {
-      font-size: 0.65rem;
-      color: var(--paper-dim);
-      letter-spacing: 0.08em;
+      font-family: var(--font-ui);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
       cursor: pointer;
       white-space: nowrap;
     }
 
-    /* ── 按钮通用 ─────────────────────────────────── */
+    /* ── 按钮通用 ─────────────────────────────── */
     .btn {
       font-family: var(--font-ui);
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      padding: 0.4rem 0.9rem;
-      border: 1px solid var(--ink-border);
-      background: none;
-      color: var(--paper-dim);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 0.45rem 1rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text-secondary);
       cursor: pointer;
       white-space: nowrap;
-      transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
       outline: none;
-    }
-
-    .btn:hover { border-color: var(--paper-dim); color: var(--paper); }
-    .btn:active { transform: scale(0.97); }
-
-    .btn-primary {
-      background: var(--vermilion);
-      border-color: var(--vermilion);
-      color: var(--paper);
-      font-weight: 500;
-    }
-    .btn-primary:hover { background: var(--vermilion-hover); border-color: var(--vermilion-hover); color: var(--paper); }
-    .btn-primary:disabled {
-      background: var(--ink-raised);
-      border-color: var(--ink-border);
-      color: var(--ink-muted);
-      cursor: not-allowed;
-    }
-    .btn-primary:active:not(:disabled) { transform: scale(0.97); }
-
-    .btn-icon {
-      padding: 0.4rem 0.6rem;
       display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.35rem;
     }
 
-    /* ── 加载骨架 ─────────────────────────────────── */
+    .btn:hover {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* 主操作按钮 */
+    .btn-primary {
+      background: var(--text-primary);
+      border-color: var(--text-primary);
+      color: #fff;
+      font-weight: 600;
+      padding: 0.45rem 1.4rem;
+    }
+
+    .btn-primary:hover {
+      background: #3C3531;
+      border-color: #3C3531;
+      color: #fff;
+    }
+
+    .btn-primary:disabled {
+      background: var(--surface-2);
+      border-color: var(--border);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    /* ── 加载骨架 ─────────────────────────────── */
     #loadingStatus {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.7rem;
-      color: var(--paper-dim);
-      letter-spacing: 0.1em;
+      gap: 0.6rem;
+      font-family: var(--font-ui);
+      font-size: 0.84rem;
+      color: var(--text-muted);
     }
 
     .skeleton-line {
-      height: 0.8em;
-      background: linear-gradient(90deg, var(--ink-surface) 25%, var(--ink-raised) 50%, var(--ink-surface) 75%);
+      height: 0.75em;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--surface-2) 25%, var(--canvas) 50%, var(--surface-2) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
     }
@@ -381,23 +432,26 @@
       100% { background-position: -200% 0; }
     }
 
-    /* ── Toast 提示 ────────────────────────────────── */
+    /* ── Toast ────────────────────────────────── */
     #toast {
       position: fixed;
       bottom: 4rem;
       left: 50%;
-      transform: translateX(-50%) translateY(8px);
-      background: var(--ink-raised);
-      color: var(--paper);
-      border: 1px solid var(--ink-border);
-      padding: 0.4rem 1rem;
-      font-size: 0.72rem;
-      letter-spacing: 0.08em;
+      transform: translateX(-50%) translateY(6px);
+      background: var(--text-primary);
+      color: #fff;
+      border-radius: 4px;
+      padding: 0.45rem 1.1rem;
+      font-family: var(--font-ui);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
       opacity: 0;
       transition: opacity 0.2s, transform 0.2s;
       pointer-events: none;
       white-space: nowrap;
       z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
 
     #toast.visible {
@@ -405,9 +459,11 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    #toast.error { border-color: var(--vermilion); color: var(--vermilion); }
+    #toast.error {
+      background: var(--accent);
+    }
 
-    /* ── 弹窗 ─────────────────────────────────────── */
+    /* ── 弹窗 ─────────────────────────────────── */
     #infoModal {
       position: fixed;
       inset: 0;
@@ -423,62 +479,105 @@
     .modal-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(14, 13, 11, 0.85);
+      background: rgba(28, 25, 23, 0.45);
       cursor: pointer;
+      backdrop-filter: blur(2px);
     }
 
     .modal-box {
       position: relative;
       z-index: 1;
-      background: var(--ink-surface);
-      border: 1px solid var(--ink-border);
-      border-top: 2px solid var(--vermilion);
-      padding: 1.5rem;
-      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--accent);
+      border-radius: 6px;
+      padding: 1.8rem;
+      max-width: 460px;
       width: 100%;
       max-height: 80dvh;
       overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
     }
 
     .modal-close {
       position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
+      top: 0.9rem;
+      right: 0.9rem;
       background: none;
       border: none;
-      color: var(--paper-dim);
+      color: var(--text-muted);
       cursor: pointer;
       font-size: 1rem;
       line-height: 1;
-      padding: 0.2rem;
-      transition: color 0.15s;
+      padding: 0.25rem;
+      border-radius: 3px;
+      transition: color 0.15s, background 0.15s;
+      font-family: var(--font-ui);
     }
-    .modal-close:hover { color: var(--paper); }
+    .modal-close:hover {
+      color: var(--text-primary);
+      background: var(--surface-2);
+    }
 
     .modal-title {
-      font-size: 0.9rem;
+      font-family: var(--font-ui);
+      font-size: 1rem;
       font-weight: 700;
-      letter-spacing: 0.15em;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--ink-border);
+      letter-spacing: 0.04em;
+      margin-bottom: 1.1rem;
+      padding-bottom: 0.7rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
     }
 
-    .modal-body p, .modal-body li {
-      font-size: 0.82rem;
-      font-weight: 300;
+    .modal-body p {
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      font-weight: 400;
       line-height: 1.7;
-      color: var(--paper-dim);
-      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.6rem;
     }
 
-    .modal-body li { list-style: none; padding-left: 1em; }
-    .modal-body li::before { content: "—"; margin-right: 0.4em; color: var(--ink-muted); }
+    .modal-body p.highlight {
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-top: 1rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-body ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .modal-body li {
+      font-family: var(--font-ui);
+      font-size: 0.88rem;
+      font-weight: 400;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .modal-body li::before {
+      content: "–";
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .modal-body li:last-child {
+      border-bottom: none;
+    }
 
     .modal-footer {
-      margin-top: 1.2rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--ink-border);
+      margin-top: 1.4rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--border);
       display: flex;
       justify-content: flex-end;
     }
@@ -500,7 +599,7 @@
     <div class="main-grid">
       <!-- 输入面板 -->
       <div class="panel">
-        <div class="panel-label">输入</div>
+        <div class="panel-label">输入原文</div>
         <textarea
           id="inputText"
           placeholder="在此输入文字..."
@@ -511,7 +610,7 @@
 
       <!-- 输出面板 -->
       <div class="panel panel--output">
-        <div class="panel-label">输出</div>
+        <div class="panel-label">转换结果</div>
         <div
           id="outputContainer"
           role="region"
@@ -519,7 +618,7 @@
           aria-live="polite"
         >
           <div id="loadingStatus">
-            <div class="skeleton-line" style="width: 6rem;"></div>
+            <div class="skeleton-line" style="width: 5rem;"></div>
             <span>加载字典中</span>
           </div>
         </div>
@@ -538,8 +637,10 @@
       </div>
 
       <!-- 操作按钮 -->
-      <button class="btn btn-icon" id="clearInputButton" aria-label="清空">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      <button class="btn" id="clearInputButton" aria-label="清空">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+        </svg>
         清空
       </button>
 
@@ -547,14 +648,18 @@
         转换
       </button>
 
-      <button class="btn btn-icon" id="generateImageButton" aria-label="生成图片">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><rect x="3" y="3" width="18" height="18"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        图片
+      <button class="btn" id="generateImageButton" aria-label="生成图片">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        </svg>
+        生成图片
       </button>
 
-      <button class="btn btn-icon" id="copyButton" aria-label="复制">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-        复制
+      <button class="btn" id="copyButton" aria-label="复制结果">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+        </svg>
+        复制结果
       </button>
     </footer>
   </div>
@@ -568,23 +673,23 @@
     <div class="modal-box">
       <button class="modal-close" id="closeModal" aria-label="关闭">&#x2715;</button>
 
-      <div class="modal-title" id="modalTitle">关于兼容模式</div>
+      <div class="modal-title" id="modalTitle">关于「全女文」与兼容模式</div>
 
       <div class="modal-body">
-        <p>「全女文」将文字中每个汉字，替换为含有「女」部件的汉字。</p>
-
-        <p style="margin-top: 0.8rem; color: var(--paper); font-weight: 400;">为何要有兼容模式？</p>
-
+        <p>「全女文」将输入文字中的每个汉字，替换为含有「女」部件的汉字。</p>
+        <p class="highlight">为什么要有兼容模式？</p>
         <ul>
-          <li>许多字体未收录罕见汉字，缺字会显示为方块「□」（豆腐块）。</li>
-          <li>本页通过联网加载花園明朝字体，尽量显示生僻字。</li>
-          <li>复制结果分享给他人时，对方设备未必有合适字体。</li>
-          <li>兼容模式仅输出常用汉字区（BMP）内的含女字，减少豆腐块。</li>
+          <li>许多设备的字体未收录罕见汉字，缺字会显示为方块「□」（豆腐块）。</li>
+          <li>本页通过网络加载花園明朝字体，尽可能显示生僻字。</li>
+          <li>复制结果分享给他人时，对方设备未必安装合适字体。</li>
+          <li>开启兼容模式后，仅使用常用汉字区（BMP）内的含女字，减少豆腐块。</li>
         </ul>
+
+        <p style="margin-top: 1rem;">支持快捷键 <kbd style="font-family: monospace; border: 1px solid var(--border); padding: 1px 5px; border-radius: 3px; font-size: 0.8em; background: var(--surface-2);">Ctrl+Enter</kbd> 快速转换。</p>
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-primary" id="closeModalBtn">明白</button>
+        <button class="btn btn-primary" id="closeModalBtn">明白了</button>
       </div>
     </div>
   </div>

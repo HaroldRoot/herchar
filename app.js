@@ -110,8 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tmp.style.cssText = [
       'position:fixed;left:-9999px;top:0;',
       'width:600px;',
-      'background:#0e0d0b;',
-      'color:#f2ede6;',
+      'background:#F7F6F3;',
+      'color:#1C1917;',
       'padding:48px;',
       'font-family:"HanaMinA","HanaMinB","Noto Serif SC",serif;',
       'font-size:1.4rem;',
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const canvas = await html2canvas(tmp, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#0e0d0b',
+        backgroundColor: '#F7F6F3',
       });
       const link = document.createElement('a');
       link.download = `全女文_${Date.now()}.png`;
