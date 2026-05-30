@@ -1,2 +1,23 @@
 __pycache__/
 tmp/
+logs/
+
+# 中间产物（运行 build.py 生成，不入库）
+all_basic_hanzi.json
+nyu_hanzi.json
+mapping.json
+
+# Python 虚拟环境
+.venv/
+venv/
+*.egg-info/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# Claude Code
+CLAUDE.md
+.agents/
+skills-lock.json
