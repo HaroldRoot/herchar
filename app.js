@@ -119,6 +119,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
   }
 
+  // 等待 img 列表加载，单张超时 5s 则跳过（不阻塞整体）
+  function waitForImages(imgs) {
+    return Promise.all(Array.from(imgs).map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(res => {
+        const timer = setTimeout(res, 5000);
+        img.onload  = () => { clearTimeout(timer); res(); };
+        img.onerror = () => { clearTimeout(timer); res(); };
+      });
+    }));
+  }
+
   generateImageButton.addEventListener('click', async () => {
     if (!currentRawResult) { showToast('请先转换文字', true); return; }
 
@@ -172,17 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.appendChild(tmp);
 
-    // 等待所有 SVG <img> 加载完成再截图
-    await Promise.all(
-      Array.from(tmp.querySelectorAll('img')).map(img =>
-        img.complete
-          ? Promise.resolve()
-          : new Promise(res => { img.onload = res; img.onerror = res; })
-      )
-    );
+    // 并发等待所有 SVG img 加载（单张超时 5s 跳过）
+    await waitForImages(tmp.querySelectorAll('img'));
 
     try {
-      await document.fonts.ready;
       const canvas = await html2canvas(tmp, {
         scale: 2,
         useCORS: true,
