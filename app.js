@@ -111,31 +111,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ── 生成图片 ──────────────────────────────────────
+  // ── 生成图片（原生 Canvas，不依赖 html2canvas） ────
   function escapeHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  // 把文本转为图片用 HTML：生僻字用 <img>（html2canvas 支持），普通字直接输出
-  function toImageHtml(text) {
-    const PX = 22; // 对应 1.25rem
+  // 把文本解析为绘制单元数组：{ type:'text'|'img', value }
+  function parseToTokens(text) {
     return Array.from(text).map(char => {
       if (missingCharsSet.has(char)) {
-        // 优先复用转换时已预加载的 img（src 已在浏览器缓存中）
-        const cached = glyphImgCache.get(char);
-        const url = cached
-          ? cached.src
-          : `https://glyphwiki.org/glyph/u${char.codePointAt(0).toString(16).toLowerCase()}.svg`;
-        return `<img src="${url}" crossorigin="anonymous" width="${PX}" height="${PX}" style="width:${PX}px;height:${PX}px;vertical-align:-0.2em;display:inline-block;" alt="${escapeHtml(char)}">`;
+        return { type: 'img', char, img: glyphImgCache.get(char) || null };
       }
-      if (char === '\n') return '<br>';
-      return escapeHtml(char);
-    }).join('');
+      return { type: 'text', value: char === '\n' ? '\n' : char };
+    });
   }
 
-  // 等待 img 列表加载，单张超时 5s 则跳过（不阻塞整体）
+  // 等待 img 列表加载，单张超时 5s 则跳过
   function waitForImages(imgs) {
-    return Promise.all(Array.from(imgs).map(img => {
+    return Promise.all(imgs.map(img => {
+      if (!img) return Promise.resolve();
       if (img.complete && img.naturalWidth > 0) return Promise.resolve();
       return new Promise(res => {
         const timer = setTimeout(res, 5000);
@@ -143,6 +137,153 @@ document.addEventListener('DOMContentLoaded', () => {
         img.onerror = () => { clearTimeout(timer); res(); };
       });
     }));
+  }
+
+  // 用原生 Canvas 绘制图片，返回 data URL
+  async function renderToCanvas(originalText, resultText) {
+    const SCALE    = 2;          // 物理像素倍率（Retina）
+    const W        = 640;        // 逻辑宽度 px
+    const PAD      = 48;
+    const FONT_SZ  = 20;         // 正文字号 px
+    const LABEL_SZ = 11;         // 标签字号 px
+    const LINE_H   = FONT_SZ * 1.75;
+    const GLYPH_SZ = FONT_SZ;    // SVG 生僻字绘制尺寸
+    const INNER_W  = W - PAD * 2;
+
+    const FONT_STACK = `bold ${FONT_SZ}px "HanaMinA","HanaMinB","Noto Serif SC",serif`;
+    const LABEL_FONT = `600 ${LABEL_SZ}px "Noto Sans SC",sans-serif`;
+
+    const COLOR_BG    = '#F7F6F3';
+    const COLOR_TEXT  = '#1C1917';
+    const COLOR_LABEL = '#9F2F2D';
+    const COLOR_DIV   = 'rgba(0,0,0,0.10)';
+
+    // ── 先用离屏 canvas 测量并收集行数据 ──────────────
+    const measure = document.createElement('canvas');
+    const mctx = measure.getContext('2d');
+
+    function measureText(text, font) {
+      mctx.font = font;
+      return mctx.measureText(text).width;
+    }
+
+    // 把 tokens 按 INNER_W 折行，返回 lines 数组
+    // 每行是 [{type,value?,char?,img?,x}] 加上 lineWidth
+    function layoutTokens(tokens) {
+      const lines = [];
+      let line = [];
+      let x = 0;
+
+      function pushLine() {
+        lines.push(line);
+        line = [];
+        x = 0;
+      }
+
+      for (const tok of tokens) {
+        if (tok.type === 'text' && tok.value === '\n') {
+          pushLine();
+          continue;
+        }
+        const w = tok.type === 'img'
+          ? GLYPH_SZ
+          : measureText(tok.value, FONT_STACK);
+
+        if (x + w > INNER_W && line.length > 0) pushLine();
+        line.push({ ...tok, x, w });
+        x += w;
+      }
+      if (line.length > 0) lines.push(line);
+      return lines;
+    }
+
+    const origTokens  = parseToTokens(originalText);
+    const resultTokens = parseToTokens(resultText);
+    const origLines   = layoutTokens(origTokens);
+    const resultLines = layoutTokens(resultTokens);
+
+    // ── 等待所有 SVG img 加载 ─────────────────────────
+    const allImgs = [...origTokens, ...resultTokens]
+      .filter(t => t.type === 'img').map(t => t.img);
+    await waitForImages(allImgs);
+
+    // ── 计算总高度 ────────────────────────────────────
+    const LABEL_H   = LABEL_SZ + 10;  // 标签行高
+    const DIVIDER_H = 28 * 2 + 1;     // 分隔线（上下 margin + 线本身）
+    const totalH =
+      PAD +
+      LABEL_H + origLines.length * LINE_H +
+      DIVIDER_H +
+      LABEL_H + resultLines.length * LINE_H +
+      PAD;
+
+    // ── 创建最终 canvas ───────────────────────────────
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * SCALE;
+    canvas.height = Math.ceil(totalH) * SCALE;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+
+    // 背景
+    ctx.fillStyle = COLOR_BG;
+    ctx.fillRect(0, 0, W, totalH);
+
+    // ── 绘制一段文字（lines 数组） ────────────────────
+    function drawLines(lines, startY) {
+      let y = startY;
+      for (const line of lines) {
+        const baseline = y + FONT_SZ;
+        for (const tok of line) {
+          if (tok.type === 'img' && tok.img && tok.img.complete && tok.img.naturalWidth > 0) {
+            // SVG 生僻字：drawImage 到 baseline 对齐位置
+            ctx.drawImage(tok.img, PAD + tok.x, baseline - GLYPH_SZ * 0.85, GLYPH_SZ, GLYPH_SZ);
+          } else if (tok.type === 'img') {
+            // 加载失败的生僻字：画一个小方块占位
+            ctx.strokeStyle = COLOR_TEXT;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(PAD + tok.x + 1, baseline - GLYPH_SZ * 0.85 + 1, GLYPH_SZ - 2, GLYPH_SZ - 2);
+          } else {
+            ctx.font = FONT_STACK;
+            ctx.fillStyle = COLOR_TEXT;
+            ctx.fillText(tok.value, PAD + tok.x, baseline);
+          }
+        }
+        y += LINE_H;
+      }
+      return y;
+    }
+
+    let y = PAD;
+
+    // 原文标签
+    ctx.font = LABEL_FONT;
+    ctx.fillStyle = COLOR_LABEL;
+    ctx.fillText('原文', PAD, y + LABEL_SZ);
+    y += LABEL_H;
+
+    // 原文正文
+    y = drawLines(origLines, y);
+
+    // 分隔线
+    y += 28;
+    ctx.strokeStyle = COLOR_DIV;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, y);
+    ctx.lineTo(W - PAD, y);
+    ctx.stroke();
+    y += 28;
+
+    // 全女文标签
+    ctx.font = LABEL_FONT;
+    ctx.fillStyle = COLOR_LABEL;
+    ctx.fillText('全女文', PAD, y + LABEL_SZ);
+    y += LABEL_H;
+
+    // 全女文正文
+    drawLines(resultLines, y);
+
+    return canvas.toDataURL('image/png');
   }
 
   const SPINNER_SVG = `<svg class="spinner" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
@@ -164,75 +305,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setImageBtnLoading(true);
     showToast('正在生成图片...');
 
-    const originalText = inputText.value;
-
-    const tmp = document.createElement('div');
-    tmp.style.cssText = [
-      'position:absolute;left:-9999px;top:0;',
-      'width:640px;',
-      'background:#F7F6F3;',
-      'color:#1C1917;',
-      'padding:48px;',
-      'font-family:"HanaMinA","HanaMinB","Noto Sans SC",sans-serif;',
-      'box-sizing:border-box;',
-    ].join('');
-
-    const labelStyle = [
-      'font-size:0.72rem;',
-      'font-weight:600;',
-      'letter-spacing:0.1em;',
-      'text-transform:uppercase;',
-      'color:#9F2F2D;',
-      'margin-bottom:8px;',
-      'font-family:"Noto Sans SC",sans-serif;',
-    ].join('');
-
-    const blockStyle = [
-      'font-size:1.25rem;',
-      'line-height:1.75;',
-      'word-break:break-word;',
-      'white-space:pre-wrap;',
-      'color:#1C1917;',
-    ].join('');
-
-    const dividerStyle = [
-      'border:none;',
-      'border-top:1px solid rgba(0,0,0,0.1);',
-      'margin:28px 0;',
-    ].join('');
-
-    const resultBlockStyle = blockStyle;
-
-    tmp.innerHTML =
-      `<div style="${labelStyle}">原文</div>` +
-      `<div style="${blockStyle}">${toImageHtml(originalText)}</div>` +
-      `<hr style="${dividerStyle}">` +
-      `<div style="${labelStyle}">全女文</div>` +
-      `<div style="${resultBlockStyle}">${toImageHtml(currentRawResult)}</div>`;
-
-    document.body.appendChild(tmp);
-
     try {
-      // 等待所有 SVG img 加载（单张超时 5s 跳过）
-      await waitForImages(tmp.querySelectorAll('img'));
-
-      // html2canvas 在移动端有时会挂起不 reject，加 15s 超时保护
-      const canvas = await Promise.race([
-        html2canvas(tmp, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#F7F6F3',
-          logging: false,
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('html2canvas timeout')), 15000)
-        ),
-      ]);
-      currentImageDataUrl = canvas.toDataURL('image/png');
+      currentImageDataUrl = await renderToCanvas(inputText.value, currentRawResult);
       currentImageFilename = `全女文_${Date.now()}.png`;
 
       imagePreview.src = currentImageDataUrl;
-      // 检测是否支持 <a download>（iOS Safari 不支持）
       const supportsDownload = typeof document.createElement('a').download !== 'undefined';
       imageModalHint.textContent = supportsDownload ? '' : '长按图片可保存到相册';
       downloadImageBtn.style.display = supportsDownload ? '' : 'none';
@@ -242,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       showToast('生成图片失败', true);
     } finally {
-      document.body.removeChild(tmp);
       setImageBtnLoading(false);
     }
   });
