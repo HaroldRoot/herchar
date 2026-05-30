@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(err => {
       loadingStatus.innerHTML =
-        `<span style="color:var(--vermilion);font-size:0.75rem">${err}</span>`;
+        `<span style="color:var(--accent);font-size:0.82rem">${err}</span>`;
     });
 
   // 缺字集合（需要 SVG fallback 的生僻字）
@@ -139,13 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('生成图片失败', true);
     } finally {
       document.body.removeChild(tmp);
-    }
-  });
-
-  // ── 键盘快捷键：Enter 转换 ────────────────────────
-  inputText.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      convertButton.click();
     }
   });
 

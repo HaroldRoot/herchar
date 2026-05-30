@@ -8,8 +8,8 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Noto Serif SC: 标签、按钮、说明用字 -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Noto Sans SC: 标签、按钮、说明用字（非衬线体） -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* ── 花園明朝：仅用于输入框、输出框、标题 ─── */
@@ -41,9 +41,9 @@
       --accent-bg:    #FDEBEC;
       --accent-hover: #7F2422;
 
-      --font-ui: "Noto Serif SC", serif;
+      --font-ui: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
       /* 花園明朝仅用于汉字显示区 */
-      --font-hanzi: "HanaMinA", "HanaMinB", "Noto Serif SC", serif;
+      --font-hanzi: "HanaMinA", "HanaMinB", "Noto Sans SC", sans-serif;
     }
 
     /* ── 重置 ─────────────────────────────────── */
@@ -190,9 +190,9 @@
 
     .panel-label {
       font-family: var(--font-ui);
-      font-size: 0.72rem;
+      font-size: 0.78rem;
       font-weight: 600;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--text-muted);
       margin-bottom: 0.4rem;
@@ -285,6 +285,30 @@
       padding-top: 0.7rem;
       border-top: 1px solid var(--border);
       flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+      footer {
+        flex-wrap: wrap;
+        gap: 0.5rem 0.4rem;
+      }
+      .compat-group {
+        width: 100%;
+        margin-right: 0;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.8rem;
+        padding: 0.45rem 0.5rem;
+        min-width: 0;
+      }
+      .btn-primary {
+        flex: 1.5;
+        padding: 0.45rem 0.6rem;
+      }
     }
 
     /* 兼容模式区 */
@@ -684,8 +708,6 @@
           <li>复制结果分享给他人时，对方设备未必安装合适字体。</li>
           <li>开启兼容模式后，仅使用常用汉字区（BMP）内的含女字，减少豆腐块。</li>
         </ul>
-
-        <p style="margin-top: 1rem;">支持快捷键 <kbd style="font-family: monospace; border: 1px solid var(--border); padding: 1px 5px; border-radius: 3px; font-size: 0.8em; background: var(--surface-2);">Ctrl+Enter</kbd> 快速转换。</p>
       </div>
 
       <div class="modal-footer">
