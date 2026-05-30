@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tmp = document.createElement('div');
     tmp.style.cssText = [
-      'position:fixed;left:-9999px;top:0;',
+      'position:absolute;left:-9999px;top:0;',
       'width:640px;',
       'background:#F7F6F3;',
       'color:#1C1917;',
@@ -212,15 +212,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.appendChild(tmp);
 
-    // 并发等待所有 SVG img 加载（单张超时 5s 跳过）
-    await waitForImages(tmp.querySelectorAll('img'));
-
     try {
-      const canvas = await html2canvas(tmp, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#F7F6F3',
-      });
+      // 等待所有 SVG img 加载（单张超时 5s 跳过）
+      await waitForImages(tmp.querySelectorAll('img'));
+
+      // html2canvas 在移动端有时会挂起不 reject，加 15s 超时保护
+      const canvas = await Promise.race([
+        html2canvas(tmp, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#F7F6F3',
+          logging: false,
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('html2canvas timeout')), 15000)
+        ),
+      ]);
       currentImageDataUrl = canvas.toDataURL('image/png');
       currentImageFilename = `全女文_${Date.now()}.png`;
 
