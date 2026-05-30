@@ -106,20 +106,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showToast('正在生成图片...');
 
+    const originalText = inputText.value;
+
     const tmp = document.createElement('div');
     tmp.style.cssText = [
       'position:fixed;left:-9999px;top:0;',
-      'width:600px;',
+      'width:640px;',
       'background:#F7F6F3;',
       'color:#1C1917;',
       'padding:48px;',
-      'font-family:"HanaMinA","HanaMinB","Noto Serif SC",serif;',
-      'font-size:1.4rem;',
-      'line-height:1.7;',
+      'font-family:"HanaMinA","HanaMinB","Noto Sans SC",sans-serif;',
+      'box-sizing:border-box;',
+    ].join('');
+
+    const labelStyle = [
+      'font-size:0.72rem;',
+      'font-weight:600;',
+      'letter-spacing:0.1em;',
+      'text-transform:uppercase;',
+      'color:#A8A29E;',
+      'margin-bottom:8px;',
+      'font-family:"Noto Sans SC",sans-serif;',
+    ].join('');
+
+    const blockStyle = [
+      'font-size:1.25rem;',
+      'line-height:1.75;',
       'word-break:break-word;',
       'white-space:pre-wrap;',
+      'color:#1C1917;',
     ].join('');
-    tmp.innerText = currentRawResult;
+
+    const dividerStyle = [
+      'border:none;',
+      'border-top:1px solid rgba(0,0,0,0.1);',
+      'margin:28px 0;',
+    ].join('');
+
+    const resultBlockStyle = blockStyle + 'color:#9F2F2D;';
+
+    tmp.innerHTML =
+      `<div style="${labelStyle}">原文</div>` +
+      `<div style="${blockStyle}">${originalText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>` +
+      `<hr style="${dividerStyle}">` +
+      `<div style="${labelStyle}">全女文</div>` +
+      `<div style="${resultBlockStyle}">${currentRawResult.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;
+
     document.body.appendChild(tmp);
 
     try {
