@@ -101,6 +101,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── 生成图片 ──────────────────────────────────────
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // 把文本转为图片用 HTML：生僻字用 <img>（html2canvas 支持），普通字直接输出
+  function toImageHtml(text) {
+    const PX = 22; // 对应 1.25rem
+    return Array.from(text).map(char => {
+      if (missingCharsSet.has(char)) {
+        const hex = char.codePointAt(0).toString(16).toLowerCase();
+        const url = `https://glyphwiki.org/glyph/u${hex}.svg`;
+        return `<img src="${url}" crossorigin="anonymous" width="${PX}" height="${PX}" style="width:${PX}px;height:${PX}px;vertical-align:-0.2em;display:inline-block;" alt="${escapeHtml(char)}">`;
+      }
+      if (char === '\n') return '<br>';
+      return escapeHtml(char);
+    }).join('');
+  }
+
   generateImageButton.addEventListener('click', async () => {
     if (!currentRawResult) { showToast('请先转换文字', true); return; }
 
@@ -124,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'font-weight:600;',
       'letter-spacing:0.1em;',
       'text-transform:uppercase;',
-      'color:#A8A29E;',
+      'color:#9F2F2D;',
       'margin-bottom:8px;',
       'font-family:"Noto Sans SC",sans-serif;',
     ].join('');
@@ -143,16 +161,25 @@ document.addEventListener('DOMContentLoaded', () => {
       'margin:28px 0;',
     ].join('');
 
-    const resultBlockStyle = blockStyle + 'color:#9F2F2D;';
+    const resultBlockStyle = blockStyle;
 
     tmp.innerHTML =
       `<div style="${labelStyle}">原文</div>` +
-      `<div style="${blockStyle}">${originalText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>` +
+      `<div style="${blockStyle}">${toImageHtml(originalText)}</div>` +
       `<hr style="${dividerStyle}">` +
       `<div style="${labelStyle}">全女文</div>` +
-      `<div style="${resultBlockStyle}">${currentRawResult.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;
+      `<div style="${resultBlockStyle}">${toImageHtml(currentRawResult)}</div>`;
 
     document.body.appendChild(tmp);
+
+    // 等待所有 SVG <img> 加载完成再截图
+    await Promise.all(
+      Array.from(tmp.querySelectorAll('img')).map(img =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise(res => { img.onload = res; img.onerror = res; })
+      )
+    );
 
     try {
       await document.fonts.ready;
@@ -161,11 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
         useCORS: true,
         backgroundColor: '#F7F6F3',
       });
-      const link = document.createElement('a');
-      link.download = `全女文_${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      showToast('图片已下载');
+      currentImageDataUrl = canvas.toDataURL('image/png');
+      currentImageFilename = `全女文_${Date.now()}.png`;
+
+      imagePreview.src = currentImageDataUrl;
+      // 检测是否支持 <a download>（iOS Safari 不支持）
+      const supportsDownload = typeof document.createElement('a').download !== 'undefined';
+      imageModalHint.textContent = supportsDownload ? '' : '长按图片可保存到相册';
+      downloadImageBtn.style.display = supportsDownload ? '' : 'none';
+      imageModal.classList.add('open');
+      showToast('图片已生成');
     } catch (err) {
       console.error(err);
       showToast('生成图片失败', true);
@@ -179,8 +211,39 @@ document.addEventListener('DOMContentLoaded', () => {
   closeModal.addEventListener('click', () => modal.classList.remove('open'));
   closeModalBtn.addEventListener('click', () => modal.classList.remove('open'));
   modalOverlay.addEventListener('click', () => modal.classList.remove('open'));
+  const imageModal        = document.getElementById('imageModal');
+  const imagePreview      = document.getElementById('imagePreview');
+  const imageModalHint    = document.getElementById('imageModalHint');
+  const imageModalOverlay = document.getElementById('imageModalOverlay');
+  const closeImageModal   = document.getElementById('closeImageModal');
+  const closeImageModalBtn= document.getElementById('closeImageModalBtn');
+  const downloadImageBtn  = document.getElementById('downloadImageBtn');
+
+  let currentImageDataUrl = '';
+  let currentImageFilename = '';
+
+  function closeImageModalFn() {
+    imageModal.classList.remove('open');
+    imagePreview.src = '';
+    currentImageDataUrl = '';
+  }
+  closeImageModal.addEventListener('click', closeImageModalFn);
+  closeImageModalBtn.addEventListener('click', closeImageModalFn);
+  imageModalOverlay.addEventListener('click', closeImageModalFn);
+
+  downloadImageBtn.addEventListener('click', () => {
+    if (!currentImageDataUrl) return;
+    const link = document.createElement('a');
+    link.download = currentImageFilename;
+    link.href = currentImageDataUrl;
+    link.click();
+  });
+
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') modal.classList.remove('open');
+    if (e.key === 'Escape') {
+      modal.classList.remove('open');
+      closeImageModalFn();
+    }
   });
 
   // ── Toast ─────────────────────────────────────────

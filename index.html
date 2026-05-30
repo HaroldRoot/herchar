@@ -621,6 +621,45 @@
       display: flex;
       justify-content: flex-end;
     }
+
+    /* ── 图片预览浮窗 ─────────────────────────────── */
+    #imageModal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    #imageModal.open { display: flex; }
+
+    #imageModal .modal-box {
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    #imagePreview {
+      max-width: 100%;
+      border-radius: 3px;
+      display: block;
+    }
+
+    .image-modal-hint {
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .image-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+    }
   </style>
 </head>
 
@@ -728,6 +767,21 @@
 
       <div class="modal-footer">
         <button class="btn btn-primary" id="closeModalBtn">明白了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 图片预览浮窗 -->
+  <div id="imageModal" role="dialog" aria-modal="true" aria-label="图片预览">
+    <div class="modal-overlay" id="imageModalOverlay"></div>
+    <div class="modal-box">
+      <button class="modal-close" id="closeImageModal" aria-label="关闭">&#x2715;</button>
+      <div class="modal-title">图片预览</div>
+      <img id="imagePreview" src="" alt="转换结果图片">
+      <p class="image-modal-hint" id="imageModalHint"></p>
+      <div class="image-modal-footer">
+        <button class="btn" id="closeImageModalBtn">关闭</button>
+        <button class="btn btn-primary" id="downloadImageBtn">下载图片</button>
       </div>
     </div>
   </div>
