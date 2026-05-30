@@ -40,9 +40,20 @@ document.addEventListener('DOMContentLoaded', () => {
     "𲛯𮱅𲛣𲛍𭒘𭒩𮱛𭒬𭒴𭒣𮱌𲛰𰌆𲛢𭑷𰋶𰌖𲛐𲛧𲛋𭒨𭒵𰋺𲛵𱙭𭒅𱙯𱙅𭶃𮰿𱙂𰌉𭒙𰌇𱙤𭒕𭒢𮱇𭒈𲡱𱙃𭒃𮱂𲛊𰌐𭒗𲛒𰌄𱙘𭤇𮱄𱙕𲛷𱻲𭑾𰋵𱙏𰋸𭒳𭒡𱙮𭒟𮰾𰌁𭒠𭒯𭑵𰌋𱙇𰌈𰗻𭒪𭒭𲛭𭒤𮱉𰋿𰿧𮰽𮰻𱙣𲛞𰇭𰌍𭑩𱙨𮱏𭒏𭑴𱙓𰌃𲛛𭑼𭒫𰌌𱙪𮱎𭒛𱙱𭒖𮱒𱙆𲛙𭒮𭒦𮱆𱙈𰌙𱙟𭂾𭒁𰌊𮱍𭑲𮆝𲛗𲛴𱙐𰋷𲛤𮱙𱨌𮱘𮱐𮰹𲛺𭑪𲽐𲛨𲛲𱙩𮓃𲛳𱙢𲛘𱙑𱦢𲛱𮰸𭑫𱙦𭔖𭒝𲛜𰌒𭑭𲛑𲛓𮱈𱙛𭒂𮱁𱙖𰋾𲛻𱙴𭒥𮍳𮱃𲛬𰌅𮱑𰋽𭑺𭑸𮱕𭒎𲛌𱙫𲛸𰋻𮱖𲛪𭑨𭒐𭒑𭑹𰌔𲛏𰌛𭒧𭑳𱙒𱙡𲛥𮱋𱙄𱙝𱙔𲛖𭒓𮱀𰌀𱙍𮱓𲛕𱙋𭑱𱙎𲛎𭒄𱙙𭒌𮰷𮱚𲛝𭑽𲛔𭤋𱙠𰋹𮰺𲛶𭒇𲛠𮱊𱙞𭑰𭑬𭒚𰌂𭒜𰌎𭑯𭑧𭒆𱙊𲛡𮱔𭑶𰌘𱼰𰌚𮰼𭴇𰋼𲛮𱆶𲛟𰐈𮣭𱀤𱙗𲛩𭑮𱙌𭒔𱙰𭑻𰌑𲍣𲛫𮱗𭒉𱙧𱙚𱙉𮡎𭒀𱙥𭒞𱙲𱙁"
   ));
 
+  // 转换时预加载的 <img> 元素缓存（char → HTMLImageElement）
+  // 这样生成图片时直接复用已在浏览器 HTTP 缓存中的资源，无需重新请求
+  const glyphImgCache = new Map();
+
   function getGlyphHtml(char) {
     const hex = char.codePointAt(0).toString(16).toLowerCase();
     const url = `https://glyphwiki.org/glyph/u${hex}.svg`;
+    // 同时预加载为 <img>，写入缓存，供图片生成时直接复用
+    if (!glyphImgCache.has(char)) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = url;
+      glyphImgCache.set(char, img);
+    }
     return `<span class="svg-icon" title="${char}" style="-webkit-mask-image:url('${url}');mask-image:url('${url}');"></span>`;
   }
 
@@ -110,8 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const PX = 22; // 对应 1.25rem
     return Array.from(text).map(char => {
       if (missingCharsSet.has(char)) {
-        const hex = char.codePointAt(0).toString(16).toLowerCase();
-        const url = `https://glyphwiki.org/glyph/u${hex}.svg`;
+        // 优先复用转换时已预加载的 img（src 已在浏览器缓存中）
+        const cached = glyphImgCache.get(char);
+        const url = cached
+          ? cached.src
+          : `https://glyphwiki.org/glyph/u${char.codePointAt(0).toString(16).toLowerCase()}.svg`;
         return `<img src="${url}" crossorigin="anonymous" width="${PX}" height="${PX}" style="width:${PX}px;height:${PX}px;vertical-align:-0.2em;display:inline-block;" alt="${escapeHtml(char)}">`;
       }
       if (char === '\n') return '<br>';
@@ -131,9 +145,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
   }
 
+  const SPINNER_SVG = `<svg class="spinner" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`;
+  const IMG_BTN_DEFAULT = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span class="btn-label">生成图片</span>`;
+
+  function setImageBtnLoading(on) {
+    if (on) {
+      generateImageButton.innerHTML = `${SPINNER_SVG}<span class="btn-label">生成中…</span>`;
+      generateImageButton.classList.add('btn-loading');
+    } else {
+      generateImageButton.innerHTML = IMG_BTN_DEFAULT;
+      generateImageButton.classList.remove('btn-loading');
+    }
+  }
+
   generateImageButton.addEventListener('click', async () => {
     if (!currentRawResult) { showToast('请先转换文字', true); return; }
 
+    setImageBtnLoading(true);
     showToast('正在生成图片...');
 
     const originalText = inputText.value;
@@ -208,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('生成图片失败', true);
     } finally {
       document.body.removeChild(tmp);
+      setImageBtnLoading(false);
     }
   });
 
